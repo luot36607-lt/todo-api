@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Todo, TodoCreate
+from app.models import Todo, TodoCreate, TodoUpdate
 
 # prefix="/todos" 表示这个路由器里所有路径都自动带上 /todos
 router = APIRouter(prefix="/todos", tags=["待办"])
@@ -31,6 +31,28 @@ def mark_done(todo_id: int, session: Session = Depends(get_session)):
     if not todo:
         raise HTTPException(status_code=404, detail="找不到这条待办")
     todo.done = True
+    session.add(todo)
+    session.commit()
+    session.refresh(todo)
+    return todo
+
+
+@router.patch("/{todo_id}", response_model=Todo)
+def update_todo(
+    todo_id: int,
+    todo_update: TodoUpdate,
+    session: Session = Depends(get_session),
+):
+    """修改待办的 title 或 done（只更新客户端传过来的字段）"""
+    todo = session.get(Todo, todo_id)
+    if not todo:
+        raise HTTPException(status_code=404, detail="找不到这条待办")
+
+    # exclude_unset=True：只拿到客户端真正传了的字段，没传的不动
+    update_data = todo_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(todo, key, value)
+
     session.add(todo)
     session.commit()
     session.refresh(todo)
