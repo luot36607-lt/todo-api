@@ -1,12 +1,16 @@
 """密码哈希 + JWT 令牌：认证体系的两块基石"""
 
+import os
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
 
-# ⚠️ 开发用的密钥。生产环境必须放进环境变量（.env），绝不能写死在代码里提交！
-SECRET_KEY = "dev-secret-change-me"
+# ⚠️ 密钥优先从环境变量读取（生产环境必须设置 SECRET_KEY）。
+# HS256 要求密钥至少 32 字节；下面这个默认值仅供本地开发。
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "dev-only-secret-change-me-in-production-32bytes"
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 令牌有效期 1 天
 
